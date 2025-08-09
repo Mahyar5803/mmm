@@ -1,0 +1,242 @@
+<!doctype html>
+
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cloudflare Clean IPs - Generator</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#0f1724; --muted:#9aa4b2; --accent:#60a5fa; --glass: rgba(255,255,255,0.03);
+    }
+    [data-theme='light']{ --bg: #f5f7fb; --card:#ffffff; --muted:#55606b; --accent:#2563eb; --glass: rgba(15,23,42,0.03); }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,'Helvetica Neue',Arial; background:linear-gradient(180deg,var(--bg),#071123); color:#e6eef6; min-height:100vh; padding:36px}.app{max-width:980px;margin:0 auto}
+header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px}
+h1{font-size:18px;margin:0}
+.controls{display:flex;gap:10px;align-items:center}
+
+.card{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:12px;padding:14px;box-shadow:0 6px 20px rgba(2,6,23,0.6);backdrop-filter:blur(6px)}
+
+.inputs{display:flex;gap:10px;flex-wrap:wrap}
+input, textarea, select{background:var(--card);border:1px solid rgba(255,255,255,0.03);padding:10px;border-radius:8px;color:inherit;font-size:14px;min-width:0}
+input[type=number]{width:120px}
+textarea{min-height:90px;width:100%;resize:vertical}
+
+.btn{background:linear-gradient(90deg,var(--accent),#3b82f6);border:none;color:white;padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:8px}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+
+.ip-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+.ip-item{padding:12px;border-radius:10px;background:var(--glass);display:flex;align-items:center;justify-content:space-between;gap:10px;transition:transform .18s ease, box-shadow .18s}
+.ip-item:hover{transform:translateY(-6px);box-shadow:0 10px 30px rgba(2,6,23,0.5)}
+.ip-left{display:flex;flex-direction:column}
+.ip-addr{font-family:Menlo,monospace;font-weight:700}
+.ip-meta{font-size:13px;color:var(--muted);margin-top:6px}
+
+.copy{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:6px 8px;border-radius:8px;cursor:pointer}
+
+.small{font-size:13px;padding:6px 8px}
+
+.theme-toggle{width:44px;height:38px;border-radius:10px;display:inline-grid;place-items:center}
+
+/* little animated glow */
+.glow{position:relative}
+.glow:after{content:'';position:absolute;inset:-3px;background:linear-gradient(90deg,transparent,rgba(96,165,250,0.12),transparent);filter:blur(16px);opacity:0;transition:opacity .25s;border-radius:12px}
+.glow:hover:after{opacity:1}
+
+/* animated header underline */
+.title-anim{display:inline-block;position:relative}
+.title-anim:after{content:'';position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),transparent);bottom:-6px;border-radius:3px;transform-origin:left;transform:scaleX(0);transition:transform .5s}
+header:hover .title-anim:after{transform:scaleX(1)}
+
+.note{color:var(--muted);font-size:13px;margin-top:8px}
+
+/* responsive */
+@media (max-width:640px){body{padding:16px}.controls{flex-direction:column;align-items:flex-start}}
+
+  </style>
+</head>
+<body data-theme="dark">
+  <div class="app">
+    <header>
+      <div>
+        <h1><span class="title-anim">Cloudflare Clean IPs — Generator</span></h1>
+        <div class="note">توجه: پینگ‌گیری در مرورگر تقریبی است و ممکن است به دلیل HTTPS/CORS/فایروال دقیق نباشد. برای تایید قطعی، بک‌اند پیشنهاد شده.</div>
+      </div><div class="controls">
+    <label class="theme-toggle card" title="تغییر تم">
+      <input id="theme-switch" type="checkbox" style="display:none">
+      <button class="btn ghost small" id="themeBtn">تم</button>
+    </label>
+  </div>
+</header>
+
+<section class="card">
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
+    <div style="flex:1">
+      <label>تعداد آی‌پی (نمونه):</label>
+      <input id="count" type="number" min="1" max="200" value="24">
+    </div>
+    <div style="width:180px">
+      <label>حداکثر پینگ (ms):</label>
+      <input id="maxPing" type="number" min="1" value="200">
+    </div>
+    <div style="width:160px">
+      <label>زمان‌سنج پینگ (ms):</label>
+      <input id="timeout" type="number" min="100" value="2500">
+    </div>
+    <div style="display:flex;align-items:end">
+      <button id="generate" class="btn">تولید</button>
+    </div>
+  </div>
+
+  <div style="margin-bottom:10px">
+    <label>محدوده‌های CIDR (اگر می‌خواهید از رنج خودتان استفاده کنید اینجا بچسبانید). هر سطر یک CIDR — مثال: 173.245.48.0/20</label>
+    <textarea id="cidrs" placeholder="اگر خالی بگذارید از Cloudflare CIDR عمومی استفاده می‌شود"></textarea>
+    <div class="note">اگر رنج‌های خودتان را وارد کنید، آی‌پی‌ها فقط از آن رنج تولید می‌شوند.</div>
+  </div>
+
+  <div style="display:flex;gap:10px;align-items:center;margin-top:6px">
+    <button id="copyAll" class="btn small">کپی همه</button>
+    <button id="download" class="btn small ghost">دانلود CSV</button>
+    <div style="margin-left:auto;color:var(--muted);font-size:13px">تعداد نمایش: <span id="shown">0</span></div>
+  </div>
+
+  <div id="ips" class="ip-grid" style="margin-top:10px"></div>
+</section>
+
+<footer style="margin-top:16px;text-align:center;color:var(--muted)">برای میزبانی: فایل را در یک repo در گیت‌هاب قرار دهید و GitHub Pages را روی branch main در روت فعال کنید.</footer>
+
+  </div><script>
+// Utility: expand IPv4 CIDR to generic random address inside
+function ipToInt(ip){return ip.split('.').reduce((a,b)=>((a<<8)|(+b))>>>0,0);} 
+function intToIp(int){return [(int>>>24)&255, (int>>>16)&255, (int>>>8)&255, int&255].join('.');}
+function cidrToRange(cidr){ let [ip,mask]=cidr.split('/'); mask=+mask; const ipInt=ipToInt(ip); const hostBits=32-mask; const network = (ipInt >>> hostBits) << hostBits; const start = network + 1; const end = (network | ((1<<hostBits)-1)) - 1; return [start,end]; }
+function randInRange(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+
+// Default Cloudflare CIDRs (snapshot). The site will attempt to fetch latest from cloudflare if possible.
+const CF_V4 = [
+  "173.245.48.0/20","103.21.244.0/22","103.22.200.0/22","103.31.4.0/22","141.101.64.0/18","108.162.192.0/18","190.93.240.0/20","188.114.96.0/20","197.234.240.0/22","198.41.128.0/17","162.158.0.0/15","104.16.0.0/12","172.64.0.0/13","131.0.72.0/22"
+];
+
+// Try to fetch authoritative Cloudflare lists
+async function fetchCfRanges(){
+  try{
+    const r = await fetch('https://www.cloudflare.com/ips-v4');
+    if(!r.ok) throw 0; const txt = await r.text(); const lines = txt.trim().split(/\r?\n/).filter(Boolean); if(lines.length) return lines; }
+  catch(e){ return CF_V4; }
+}
+
+// Ping attempt via Image (approx). Returns ms or null on fail/timeout.
+function pingByImage(ip, timeout){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    const t0 = performance.now();
+    let done=false;
+    const timer = setTimeout(()=>{ if(done) return; done=true; resolve(null); try{img.src='about:blank'}catch(e){} }, timeout);
+    img.onload = ()=>{ if(done) return; done=true; clearTimeout(timer); resolve(Math.round(performance.now()-t0)); };
+    img.onerror = ()=>{ if(done) return; done=true; clearTimeout(timer); resolve(null); };
+    // try HTTP first then HTTPS
+    const rand = Math.floor(Math.random()*1e6);
+    img.src = 'http://'+ip+'/?_='+rand; 
+  });
+}
+
+// Generate random IPv4s from CIDRs
+function sampleFromCidrs(cidrs, count){
+  const ranges = cidrs.map(cidrToRange).filter(r=>r[1]-r[0]>0);
+  const out=[]; let attempts=0;
+  while(out.length<count && attempts< (count*20)){
+    attempts++;
+    const r = ranges[Math.floor(Math.random()*ranges.length)];
+    const ipInt = randInRange(r[0], r[1]);
+    const ip = intToIp(ipInt);
+    if(!out.includes(ip)) out.push(ip);
+  }
+  return out;
+}
+
+// UI
+const ipsEl = document.getElementById('ips');
+const shownEl = document.getElementById('shown');
+const cidrTa = document.getElementById('cidrs');
+const countEl = document.getElementById('count');
+const maxPingEl = document.getElementById('maxPing');
+const timeoutEl = document.getElementById('timeout');
+const generateBtn = document.getElementById('generate');
+const copyAllBtn = document.getElementById('copyAll');
+const downloadBtn = document.getElementById('download');
+const themeBtn = document.getElementById('themeBtn');
+
+let latestList = [];
+(async()=>{ latestList = await fetchCfRanges(); // don't populate textarea
+})();
+
+async function generate(){
+  generateBtn.disabled=true; generateBtn.textContent='درحال تولید...';
+  let cidrs = cidrTa.value.trim() ? cidrTa.value.trim().split(/\r?\n/).map(s=>s.trim()).filter(Boolean) : latestList.slice();
+  const count = Math.min(400, Math.max(1, +countEl.value||24));
+  const timeout = Math.max(100, +timeoutEl.value||2500);
+  const maxPing = Math.max(1, +maxPingEl.value||9999);
+  const sample = sampleFromCidrs(cidrs, count);
+  ipsEl.innerHTML=''; shownEl.textContent = sample.length;
+  const results = [];
+  // sequential-ish with small concurrency to avoid spamming
+  const concurrency = 8;
+  let idx=0;
+  async function worker(){
+    while(idx<sample.length){
+      const i = idx++; const ip = sample[i];
+      const container = document.createElement('div'); container.className='ip-item';
+      container.innerHTML = `
+        <div class="ip-left">
+          <div class="ip-addr">${ip}</div>
+          <div class="ip-meta">درحال بررسی...</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="copy small" data-ip="${ip}">کپی</button>
+        </div>`;
+      ipsEl.appendChild(container);
+      // ping
+      const ms = await pingByImage(ip, timeout);
+      const meta = container.querySelector('.ip-meta');
+      if(ms===null || ms>maxPing){ meta.textContent = 'نامعتبر / زمان‌خارج'; container.style.opacity=0.45; }
+      else{ meta.textContent = 'پینگ: '+ms+' ms'; results.push({ip,ms}); }
+      const copyBtn = container.querySelector('.copy');
+      copyBtn.addEventListener('click', ()=>{ navigator.clipboard.writeText(ip).then(()=>{ copyBtn.textContent='کپی شد'; setTimeout(()=>copyBtn.textContent='کپی',900) }) });
+    }
+  }
+  const workers =[]; for(let i=0;i<concurrency;i++) workers.push(worker());
+  await Promise.all(workers);
+  generateBtn.disabled=false; generateBtn.textContent='تولید';
+}
+
+generateBtn.addEventListener('click', generate);
+
+copyAllBtn.addEventListener('click', ()=>{
+  const list = Array.from(document.querySelectorAll('.ip-addr')).map(el=>el.textContent).join('\n');
+  navigator.clipboard.writeText(list).then(()=>{ copyAllBtn.textContent='کپی شد'; setTimeout(()=>copyAllBtn.textContent='کپی همه',900) });
+});
+
+downloadBtn.addEventListener('click', ()=>{
+  const rows = Array.from(document.querySelectorAll('.ip-item')).map(node=>{
+    const ip = node.querySelector('.ip-addr').textContent;
+    const meta = node.querySelector('.ip-meta').textContent.replace(/,/g,'');
+    return `${ip},"${meta}"`;
+  });
+  const csv = 'ip,meta\n'+rows.join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='ips.csv'; a.click(); URL.revokeObjectURL(url);
+});
+
+// simple theme toggle
+const body = document.body; const themeSwitch = document.getElementById('theme-switch');
+themeBtn.addEventListener('click', ()=>{
+  if(body.getAttribute('data-theme')==='dark'){ body.setAttribute('data-theme','light'); themeBtn.textContent='روشن'; }
+  else{ body.setAttribute('data-theme','dark'); themeBtn.textContent='تاریک'; }
+});
+
+// initial theme label
+themeBtn.textContent = 'تاریک';
+</script></body>
+</html>
