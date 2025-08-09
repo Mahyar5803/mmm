@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Clean IP Finder</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark">
+    <div class="container">
+        <h1>Cloudflare Clean IP Finder</h1>
+        <div class="controls">
+            <input type="number" id="ipCount" placeholder="تعداد آی‌پی" min="1" value="5">
+            <input type="number" id="maxPing" placeholder="حداکثر پینگ (ms)" min="1" value="150">
+            <button id="generateBtn">تولید آی‌پی</button>
+            <button id="copyAllBtn">📋 کپی همه</button>
+            <button id="themeBtn">🌓</button>
+        </div>
+        <div id="results"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
