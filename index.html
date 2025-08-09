@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎯 تولید آی‌پی تمیز کلودفلر</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="dark">
+  <div class="container">
+    <h1 class="neon-text">🎯 تولید آی‌پی تمیز کلودفلر</h1>
+    
+    <div class="input-group">
+      <label>تعداد آی‌پی‌ها:</label>
+      <input type="number" id="count" value="10">
+    </div>
+    
+    <div class="input-group">
+      <label>حداکثر پینگ مجاز (ms):</label>
+      <input type="number" id="maxPing" value="200">
+    </div>
+    
+    <div class="btn-group">
+      <button class="btn glow" onclick="generateIPs()">🚀 تولید</button>
+      <button class="btn glow" onclick="switchTheme()">🌓 سوییچ تم</button>
+      <button class="btn glow" onclick="copyAll()">📋 کپی همه</button>
+    </div>
+    
+    <div id="results"></div>
+  </div>
+<script src="script.js"></script>
+</body>
+</html>
